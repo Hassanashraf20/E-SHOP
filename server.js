@@ -3,6 +3,9 @@ const path =require('path')
 const express = require ("express")
 const dotenv = require("dotenv")
 const morgan = require("morgan")
+const cors = require('cors')
+const compression = require('compression')
+
 dotenv.config({path: "config.env"})
 
 
@@ -19,6 +22,13 @@ const globaleError = require(`./middlewares/errorMidlleware`)
 
 //Express app
 const app = express();
+app.use(cors())
+app.options('*', cors())
+
+
+// compress responses
+app.use(compression())
+
 
 //Dtaebase Call
 dbconnection()
