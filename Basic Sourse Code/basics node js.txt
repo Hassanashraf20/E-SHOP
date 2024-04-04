@@ -1,0 +1,158 @@
+const express =  require("express")
+const bodyparser = require("body-parser")
+const request = require("request")
+const dotenv = require("dotenv")
+
+dotenv.config({path: "config.env"})
+const app = express()
+app.use(express.static("public"))
+
+app.use(bodyparser.urlencoded({extended:true}))
+app.use(bodyparser.json())
+
+app.get("/" , (req,res)=>{
+res.sendFile(__dirname + "/sign up.html")
+
+})
+
+app.post(req,res =>{
+
+    
+})
+
+
+app.listen(3000,()=>{
+    console.log("server is running on Port 3000")
+})  
+------------------
+-config-
+
+const mongoose = require("mongoose")
+
+//conn of Database
+
+const dbconnection = () =>{
+    mongoose.connect(process.env.DB_url).then((conn) => {
+        console.log("Datebase is connected ")
+        }).catch((err)=>{
+            console.log("Datebase is faild ")
+            process.exit(1)
+        })
+     
+}
+module.exports = dbconnection
+
+---------------------------
+-models-
+const mongoose = require("mongoose")
+
+// create Schema
+const Categoryschema = new mongoose.Schema({
+    name: String,
+})
+
+
+//create modle
+const Categorymodel = new mongoose.model("Category",Categoryschema)
+
+module.exports = Categorymodel
+    
+----------------------------
+-services-
+
+
+---------------------------------
+-routes-
+const express = require ("express")
+const router = express.Router()
+
+const {getCategories} = require("../services/categoryServices")
+
+router.get("/",getCategories)
+module.exports = router
+----------------------------------
+-gitignore-
+node_modules
+
+config.env
+-------------------------
+config.env-
+PORT=5000
+
+NODE_ENV=development
+
+
+# database set
+DB_url=mongodb+srv://hassanelsherbiny:B4NdI57VcLc16LNr@cluster0.teb2wa6.mongodb.net/
+# DB_NAME=V1-project
+# DB_USER=hassanelsherbiny
+# BD_PASSWORD=B4NdI57VcLc16LNr
+
+
+-------------------
+-index.js-
+const express = require ("express")
+const dotenv = require("dotenv")
+const morgan = require("morgan")
+
+
+
+dotenv.config({path: "config.env"})
+const apiError = require(`./utils/apiError`)
+const dbconnection = require("./config/database")
+const categoryRoute = require("./routes/categoryRoute")
+
+//Express app
+const app = express();
+
+
+//Midlleware
+app.use(express.json())
+if(process.env.Node_ENV=="development"){
+    app.use(morgan("dev"))
+    console.log(`mode:${process.env.Node_ENV} `)
+    
+}
+
+
+
+dbconnection()
+const mongoose = require("mongoose")
+
+app.get('/', (req, res) => {
+    res.send('Hello !')
+  })
+
+
+
+// Mount Routse
+app.use('/api/categories',categoryRoute)
+
+
+//Create Handle Unhandled Routes and Send Error to Error Handling Middleware
+app.all('*',(req,res,next)=>{    
+next(new apiError(`can not find this route: ${req.originalUrl}`,400))
+})
+
+//Globale Error Handling Middleware
+app.use((err,req,res,next)=>{
+
+err.statusCode=err.statusCode || 500
+err.status=err.status  || "Error"
+
+    res.status(err.statusCode).json({
+        status:err.status,
+        Error:err,
+        massage:err.massage,
+        stack:err.stack
+
+    })
+
+})
+
+// listen server to port
+const PORT = process.env.port || 5000
+app.listen (PORT, () => {
+    console.log(`server is running on port: ${PORT}`)
+
+})
