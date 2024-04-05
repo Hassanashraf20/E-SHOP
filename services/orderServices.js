@@ -165,3 +165,33 @@ exports.checkoutSession =  asyncHandler(async (req, res, next) =>{
 
     res.status(200).json({status:'success' , session })
 })
+
+
+const createCardOrder =()=>{
+    
+}
+
+// @desc    This webhook will run when stripe payment success paid
+// @route   POST /webhook-checkout
+// @access  auth/User
+exports.webhookCheckout = asyncHandler(async (req, res, next) =>{
+ const sig = req.headers['stripe-signature']
+
+ let event
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.WEBHOOK_SECRET)
+  } catch (err) {
+    response.status(400).send(`Webhook Error: ${err.message}`)
+    return
+  }
+
+  // Handle the event
+  if(event.type === 'checkout.session.completed'){
+    //  Create order
+    createCardOrder(event.data.object)
+  }
+
+  // Return a 200 response to acknowledge receipt of the event
+  res.status(200).json({received: true})
+})

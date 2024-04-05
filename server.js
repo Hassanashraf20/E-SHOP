@@ -12,13 +12,13 @@ dotenv.config({path: "config.env"})
 
 const apiError = require(`./utils/apiError`)
 const dbconnection = require("./config/database")
-
-const mountRoutes=require('./routes')
-
 const globaleError = require(`./middlewares/errorMidlleware`)
 
 
+//mountRoutes
+const mountRoutes=require('./routes')
 
+const {webhookCheckout} = require('./services/orderServices')
 
 //Express app
 const app = express();
@@ -28,6 +28,9 @@ app.options('*', cors())
 
 // compress responses
 app.use(compression())
+
+//webhook
+app.post('/webhook-checkout', express.raw({type: 'application/json'}),webhookCheckout)
 
 
 //Dtaebase Call
@@ -47,10 +50,6 @@ if(process.env.Node_ENV=="development"){
     app.use(morgan("prod"))
     console.log(`mode:${process.env.Node_ENV} `)
 }
-
-
-
-
 
 
 
