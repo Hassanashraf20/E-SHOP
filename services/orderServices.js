@@ -11,7 +11,7 @@ const stripe = require('stripe')(process.env.SECRET_KEY)
 const Order = require('../models/orderModel')
 const Cart = require('../models/cartModel')
 const Product = require('../models/productModel')
-
+const User = require('../models/userModel')
 
 
 
@@ -167,8 +167,38 @@ exports.checkoutSession =  asyncHandler(async (req, res, next) =>{
 })
 
 
-const createCardOrder =()=>{
-    
+const createCardOrder =async (session)=>{
+    const cartId = session.client_reference_id
+    const orderPrice = session.amount_total /100
+    const shippingAddress = session.metadata
+
+    const user = await User.findOne({email: session.customer_email })
+    const cart =  await Cart.findById(cartId)
+
+    // 3) Create order with default paymentMethodType card
+    const order = await Order.create({
+        user : user._id,
+        cartItems : cart.cartItems,
+        shippingAddress,
+        totalorderPrice : orderPrice ,
+        isPaid : true,
+        paidAt: Date.now(),
+        paymentMethod:'card'
+    })
+
+    //4)After creating order, decrement (-) product quantity, increment (+) product sold  { Using bulkWrite }
+    if(order){
+        const bulkOpts = cart.cartItems.map((item)=>({
+            updateOne:{
+                filter:{_id: item.product},
+                update:{$inc:{quantity: -item.quantity , sold: +item.quantity }}
+            }
+        }))
+        await Product.bulkWrite(bulkOpts,{})
+
+        // 5) Clear cart depend on cartId
+        await Cart.findByIdAndDelete(cartId)
+    }
 }
 
 // @desc    This webhook will run when stripe payment success paid
