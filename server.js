@@ -5,6 +5,8 @@ const dotenv = require("dotenv")
 const morgan = require("morgan")
 const cors = require('cors')
 const compression = require('compression')
+const rateLimit = require ('express-rate-limit') //#Security 
+const mongoSanitize = require('express-mongo-sanitize') //#Security 
 
 dotenv.config({path: "config.env"})
 
@@ -38,7 +40,8 @@ dbconnection()
 
 
 //Midlleware
-app.use(express.json())
+app.use(express.json({limit:'25kb'}))   //#Security > {limit:'25kb'} > Set request size limits
+
 app.use(express.static(path.join(__dirname,'uploads')))
 
 
@@ -51,7 +54,18 @@ if(process.env.Node_ENV=="development"){
     console.log(`mode:${process.env.Node_ENV} `)
 }
 
+//#Security > sanitizes user-supplied data to prevent MongoDB Operator Injection.
+app.use(mongoSanitize())
 
+//#Security > Limit each IP to 100 requests per `window` (here, per 15 minutes).
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	limit: 100, 
+    message:
+    'Too many accounts created from this IP, please try again after an hour',
+})
+//#Security > Apply the rate limiting middleware to all requests.
+app.use('/api',limiter)
 
 
 
